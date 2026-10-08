@@ -1,0 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "semantic.h"
+static int integer(const char*s){if(!s||!*s)return 0;char*e;strtol(s,&e,10);return *e==0;}static int decimal(const char*s){if(!s||!*s)return 0;char*e;strtod(s,&e);return *e==0&&strchr(s,'.');}
+static int match(const char*t,const char*v){if(!strcmp(t,"entero"))return integer(v);if(!strcmp(t,"decimal"))return integer(v)||decimal(v);if(!strcmp(t,"texto"))return v[0]!=0;if(!strcmp(t,"caracter"))return strlen(v)==1;if(!strcmp(t,"booleano"))return !strcmp(v,"verdadero")||!strcmp(v,"falso");return 0;}
+int semantic_analyze(const ASTNode*r,SymbolTable*t){int e=0;symbol_table_init(t);for(;r;r=r->next){if(r->type==AST_DECLARACION){if(symbol_find(t,r->name)>=0){fprintf(stderr,"[SEMANTICO] La variable '%s' ya fue declarada.\n",r->name);e++;continue;}int init=r->value[0]!=0;if(init&&!match(r->data_type,r->value)){fprintf(stderr,"[SEMANTICO] El valor '%s' no corresponde al tipo '%s'.\n",r->value,r->data_type);e++;continue;}symbol_add(t,r->name,r->data_type,r->value,init);}else{int i=symbol_find(t,r->name);if(i<0){fprintf(stderr,"[SEMANTICO] La variable '%s' no ha sido declarada.\n",r->name);e++;continue;}if(!match(t->symbols[i].type,r->value)){fprintf(stderr,"[SEMANTICO] No se puede asignar '%s' a '%s' de tipo '%s'.\n",r->value,r->name,t->symbols[i].type);e++;continue;}symbol_set_value(t,r->name,r->value);}}return e;}
